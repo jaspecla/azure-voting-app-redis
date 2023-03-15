@@ -9,11 +9,7 @@ permissions:
 env:
   CONTAINER_NAME: "azure-vote-front"
   RESOURCE_GROUP: "helm-demo-prod"
-  CLUSTER_NAME: "helm-demo-prod-cluster"
-  REDIS_CHART_PATH: "./redis"
-  REDIS_OVERRIDE_PATH: "./redis/myRedisValues.yaml"
-  FRONT_END_CHART_PATH: "./azure-vote-front"
-  FRONT_END_OVERRIDE_PATH: "./azure-vote-front"
+  CLUSTER_NAME: "helm-demo-cluster-prod"
       
 jobs:
 
