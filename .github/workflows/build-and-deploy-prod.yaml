@@ -2,13 +2,16 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "practice-deployment", "master" ]
+    branches:
+      - master
+      - practice-deployment
 
 jobs:
 
   build:
 
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
     - uses: actions/checkout@v3
