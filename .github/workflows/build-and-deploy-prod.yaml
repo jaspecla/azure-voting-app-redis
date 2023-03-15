@@ -1,11 +1,11 @@
 name: Docker Image CI
 
-on:
-  push:
-    branches:
-      - master
-      - practice-deployment
+on: [push]
 
+permissions:
+      id-token: write
+      contents: read
+      
 jobs:
 
   build:
