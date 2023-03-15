@@ -1,14 +1,23 @@
-name: Docker Image CI
+name: Build and Deploy with Helm
 
 on: [push]
 
 permissions:
       id-token: write
       contents: read
+
+env:
+  CONTAINER_NAME: "azure-vote-front"
+  RESOURCE_GROUP: "helm-demo-prod"
+  CLUSTER_NAME: "helm-demo-prod-cluster"
+  REDIS_CHART_PATH: "./redis"
+  REDIS_OVERRIDE_PATH: "./redis/myRedisValues.yaml"
+  FRONT_END_CHART_PATH: "./azure-vote-front"
+  FRONT_END_OVERRIDE_PATH: "./azure-vote-front"
       
 jobs:
 
-  build:
+  build-and-deploy:
 
     runs-on: ubuntu-latest
     environment: production
@@ -27,4 +36,34 @@ jobs:
       id: build-image
       working-directory: ./azure-vote
       run: |
-           az acr build --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/azure-vote-front:${{ github.sha }} --registry ${{ secrets.REGISTRY_LOGIN_SERVER }} --file "Dockerfile" .
+           az acr build --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ secrets.REGISTRY_LOGIN_SERVER }} --file "Dockerfile" .
+
+
+    # Use kubelogin to configure your kubeconfig for Azure auth
+    - name: Set up kubelogin for non-interactive login
+      uses: azure/use-kubelogin@v1
+      with:
+        kubelogin-version: 'v0.0.27'
+
+    # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
+    - name: Get K8s context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ env.RESOURCE_GROUP }}
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        admin: 'false'
+        use-kubelogin: 'true'
+
+    - uses: azure/setup-helm@v3
+      with:
+        version: '3.11.1' # default is latest (stable)
+        token: ${{ secrets.GITHUB_TOKEN }} # only needed if version is 'latest'
+      id: install
+
+    - name: Deploy Redis Chart
+      run: |
+        helm upgrade redis ./redis -f ./redis/myRedisValues.yaml --install
+
+    - name: Deploy Azure Vote Chart
+      run: |
+        helm upgrade azure-vote-front ./azure-vote-front -f ./azure-vote-front/values.prod.yaml --set image.version=${{ github.sha }} --install
